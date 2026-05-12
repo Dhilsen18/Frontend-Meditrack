@@ -5,6 +5,7 @@ import { fetchDashboardData } from '../../../shared/infrastructure/services/dash
 
 const { t } = useI18n();
 const establishments = ref([]);
+const operators = ref([]);
 const isLoading = ref(true);
 const selectedId = ref(null); // Starts closed
 let map = null;
@@ -34,6 +35,7 @@ const specificCoords = {
 const loadData = async () => {
   try {
     const data = await fetchDashboardData();
+    operators.value = data.operators ?? [];
     establishments.value = data.establishments.map((est, index) => {
       // Priority 1: Specific name match
       let coord = specificCoords[est.establishment_name];
@@ -104,6 +106,23 @@ const updateMarkers = () => {
 const selectedEst = computed(() => 
   establishments.value.find(e => e.id === selectedId.value)
 );
+
+function countOperatorsForEstablishment(est) {
+  if (!est?.id || !operators.value.length) return 0;
+  const estId = Number(est.id);
+  if (Number.isNaN(estId)) return 0;
+  return operators.value.filter((op) => Number(op.establishment_id) === estId).length;
+}
+
+const selectedOperatorCount = computed(() =>
+  selectedEst.value ? countOperatorsForEstablishment(selectedEst.value) : 0
+);
+
+function personnelLabel(count) {
+  if (count === 0) return t('establishment.noOperatorsAssigned');
+  if (count === 1) return t('establishment.operatorsCountOne');
+  return t('establishment.operatorsCount', { n: count });
+}
 
 const selectEstablishment = (id) => {
   selectedId.value = id;
@@ -184,7 +203,10 @@ onMounted(() => {
             </div>
             <div class="stat-box">
               <span class="s-label">Personal</span>
-              <span class="s-value">24 Operadores</span>
+              <span
+                class="s-value"
+                :class="{ 'text-muted': selectedOperatorCount === 0 }"
+              >{{ personnelLabel(selectedOperatorCount) }}</span>
             </div>
           </div>
 
@@ -325,6 +347,7 @@ onMounted(() => {
 .s-value { font-size: 0.95rem; font-weight: 700; }
 .text-green { color: #10b981; }
 .text-orange { color: #f59e0b; }
+.text-muted { color: #94a3b8; font-weight: 600; }
 
 .map-tools {
   position: absolute;

@@ -63,3 +63,8 @@ export const createEstablishment = async (data) => {
     throw error;
   }
 };
+
+export const deleteOperator = async (id) => {
+  const response = await axios.delete(`${apiUrls.operators}${endpoints.operators}/${id}`);
+  return response.data;
+};

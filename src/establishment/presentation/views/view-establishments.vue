@@ -25,8 +25,8 @@ const loadData = async () => {
 const filteredEst = computed(() => {
   if (!searchQuery.value) return establishments.value;
   return establishments.value.filter(e => 
-    e.establishment_name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-    e.city_region.toLowerCase().includes(searchQuery.value.toLowerCase())
+    (e.establishment_name || '').toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+    (e.city_region || '').toLowerCase().includes(searchQuery.value.toLowerCase())
   );
 });
 
@@ -49,7 +49,11 @@ const stats = computed(() => {
 
 onMounted(loadData);
 
-const viewDetails = (id) => router.push(`/establishment/view/${id}`);
+const viewDetails = (id) =>
+  router.push({
+    name: 'establishment-detail',
+    params: { establishmentId: String(id) },
+  });
 const goBack = () => router.back();
 </script>
 
@@ -98,8 +102,19 @@ const goBack = () => router.back();
 
     <!-- Data List -->
     <div v-else class="est-list">
-      <div v-for="est in filteredEst" :key="est.id" class="est-card">
-        <div class="est-icon" :class="est.establishment_type.toLowerCase()">
+      <div
+        v-for="est in filteredEst"
+        :key="est.id"
+        class="est-card"
+        role="button"
+        tabindex="0"
+        @click="viewDetails(est.id)"
+        @keydown.enter.prevent="viewDetails(est.id)"
+      >
+        <div
+          class="est-icon"
+          :class="(est.establishment_type || 'OTHER').toLowerCase().replace(/[^a-z0-9]/g, '') || 'other'"
+        >
           <i :class="est.establishment_type === 'HOSPITAL' ? 'pi pi-heart-fill' : 'pi pi-box'"></i>
         </div>
         
@@ -122,7 +137,11 @@ const goBack = () => router.back();
             <span class="dot"></span>
             Activo
           </div>
-          <pv-button icon="pi pi-chevron-right" class="p-button-rounded p-button-text p-button-secondary" @click="viewDetails(est.id)" />
+          <pv-button
+            icon="pi pi-chevron-right"
+            class="p-button-rounded p-button-text p-button-secondary"
+            @click.stop="viewDetails(est.id)"
+          />
         </div>
       </div>
       
@@ -269,6 +288,7 @@ const goBack = () => router.back();
   align-items: center;
   gap: 1.5rem;
   transition: all 0.2s ease;
+  cursor: pointer;
 }
 
 .est-card:hover {
@@ -288,7 +308,12 @@ const goBack = () => router.back();
 }
 
 .est-icon.hospital { background: #fee2e2; color: #ef4444; }
-.est-icon.warehouse { background: #fef9c3; color: #ca8a04; }
+.est-icon.warehouse,
+.est-icon.almacen,
+.est-icon.almacn { background: #fef9c3; color: #ca8a04; }
+.est-icon.other,
+.est-icon.distributioncenter,
+.est-icon.factory { background: #f1f5f9; color: #64748b; }
 
 .est-body {
   flex: 1;
